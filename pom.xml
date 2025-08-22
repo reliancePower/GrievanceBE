@@ -72,7 +72,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>grievanceDev</finalName>
+		<finalName>grievance</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

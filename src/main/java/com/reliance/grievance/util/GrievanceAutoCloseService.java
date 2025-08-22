@@ -1,5 +1,6 @@
 package com.reliance.grievance.util;
 
+import com.reliance.grievance.controller.GrievanceController;
 import com.reliance.grievance.entity.Grievance;
 import com.reliance.grievance.enums.GrievanceStatus;
 import com.reliance.grievance.helper.MailHelper;
@@ -15,6 +16,9 @@ import java.util.List;
 @Service
 public class GrievanceAutoCloseService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GrievanceController.class);
+
+
     @Autowired
     private GrievanceRepository grievanceRepo;
 
@@ -23,6 +27,9 @@ public class GrievanceAutoCloseService {
 
     @Scheduled(cron = "0 0 2 * * ?") // Runs daily at 2 AM
     public void autoCloseInactiveGrievances() {
+
+        log.info("Scheduler Run : EscalationService");
+
         List<Grievance> grievances = grievanceRepo.findAllByStatusNot(GrievanceStatus.RESOLVED);
 
         for (Grievance grievance : grievances) {

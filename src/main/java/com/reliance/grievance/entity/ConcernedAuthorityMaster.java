@@ -40,5 +40,11 @@ public class ConcernedAuthorityMaster {
     @Column(name = "employee_id", nullable = false, length = 50)
     private String employeeId;
 
+    @Column(name = "days")
+    private Integer days;
+
+    @Column(name = "is_super", length = 1, nullable = false)
+    private String isSuper = "N";
+
 }
 

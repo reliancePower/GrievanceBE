@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface GrievanceAttachmentRepository extends JpaRepository<GrievanceAttachment, Long> {
     List<GrievanceAttachment> findByGrievanceId(Integer grievanceId);
+    List<GrievanceAttachment> findByGrievanceIdOrderByUploadedOnDesc(Long grievanceId);
 }
 

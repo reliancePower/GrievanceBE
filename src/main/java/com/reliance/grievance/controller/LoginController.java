@@ -8,6 +8,7 @@ import com.reliance.grievance.entity.EmployeeLogin;
 import com.reliance.grievance.repository.EmployeeLoginRepository;
 import com.reliance.grievance.service.AuthService;
 import com.reliance.grievance.service.LoginAuditService;
+import com.reliance.grievance.service.UserDirectoryService;
 import com.reliance.grievance.service.UserService;
 import com.reliance.grievance.util.AESEncryptionUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,6 +37,9 @@ public class LoginController {
     @Autowired
     LoginAuditService loginAuditService;
 
+    @Autowired
+    UserDirectoryService userDirectoryService;
+
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LoginController.class);
 
 
@@ -47,6 +51,13 @@ public class LoginController {
         String webmailID = loginRequest.getEmail();
         String password1 = loginRequest.getPassword();
         boolean exists = false;
+        String email = generateEmail(webmailID);
+
+            if (!userDirectoryService.isAllowedUser(email)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Authentication failed", "Access Denied"));
+
+            }
 
         String decryptedPassword = authService.decryptPassword(password1);
 
@@ -101,6 +112,20 @@ public class LoginController {
         loginAuditService.recordLogout(payload.get("userId"), payload.get("loginType"));
         return ResponseEntity.ok("Logout recorded");
     }
+
+    public String generateEmail(String fullName) {
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+
+        String[] parts = fullName.trim().toLowerCase().split("\\s+");
+
+        String joined = String.join(".", parts);
+
+        return joined + "@reliancegroupindia.com";
+    }
+
+
 
 }
 

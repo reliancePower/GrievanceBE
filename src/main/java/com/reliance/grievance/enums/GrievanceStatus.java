@@ -1,11 +1,10 @@
 package com.reliance.grievance.enums;
 
 public enum GrievanceStatus {
-    PENDING_AT_CONCERNED_TEAM,
-    PENDING_AT_USER,
-    L1_ESCALATION,
-    L2_ESCALATION,
-    L3_ESCALATION,
-    RESOLVED
+    WITH_L1,
+    WITH_L2,
+    WITH_L3,
+    RESOLVED,
+    WITHDRAWN
 }
 

@@ -19,5 +19,7 @@ public class GrievanceRequestDTO {
     private String type;
     private String userId;
     private String email;
+    private String mobile;
+    private String empId;
 }
 

@@ -72,6 +72,10 @@ public class Grievance {
     @JoinColumn(name = "concerned_authority_id")
     private ConcernedAuthorityMaster concernedAuthority;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id", insertable = false, updatable = false)
+    private LocationMaster location;
+
     @Column(name = "concerned_person_email")
     private String concernedPersonEmail;
 
@@ -83,6 +87,26 @@ public class Grievance {
 
     @Column(name = "update_date")
     private LocalDateTime updateDate;
+
+    @Column(name = "user_rating")
+    private Integer userRating;
+
+    @Column(name = "user_rating_submitted")
+    private Boolean userRatingSubmitted = false;
+
+    @Column(name = "user_mobile", length = 20)
+    private String userMobile;
+
+    @Column(name = "external_id", unique = true)
+    private String externalId;
+
+    @Column(name = "emp_id")
+    private String empId;
+
+    @Column(name = "user_dept")
+    private String userDept;
+
+
 
     @PreUpdate
     public void onUpdate() {
