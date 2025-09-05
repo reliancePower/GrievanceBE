@@ -6,7 +6,10 @@ import com.reliance.grievance.entity.*;
 import com.reliance.grievance.enums.GrievanceStatus;
 import com.reliance.grievance.helper.MailHelper;
 import com.reliance.grievance.repository.*;
+import com.reliance.grievance.service.ExternalIdService;
 import com.reliance.grievance.service.UserDirectoryService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
@@ -59,6 +62,8 @@ public class GrievanceController {
     @Autowired
     UserDirectoryService userDirectoryService;
 
+    @Autowired
+    ExternalIdService externalIdService;
 
 
     @PostMapping(value = "/submit", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
@@ -100,20 +105,6 @@ public class GrievanceController {
                 hrDbEmail = generateEmail(hrDbEmail);
             }
 
-//            String mobile = userDirectoryService.findMobileByEmail(hrDbEmail).orElse(null);
-//            if (mobile == null && dto.getMobile() != null && !dto.getMobile().isBlank()) {
-//                grievance.setUserMobile(dto.getMobile());
-//            }
-//            else
-//                grievance.setUserMobile(mobile);
-//
-//            String prNo   = userDirectoryService.findPrNoByEmail(hrDbEmail).orElse(null);
-//            if (prNo == null && dto.getEmpId() != null && !dto.getEmpId().isBlank()) {
-//                grievance.setEmpId(dto.getEmpId());
-//            } else {
-//                grievance.setEmpId(prNo);
-//            }
-
             var hr = userDirectoryService.findHrInfoByEmail(hrDbEmail).orElse(null);
 
             if (hr != null) {
@@ -135,7 +126,12 @@ public class GrievanceController {
                 clientIp = request.getRemoteAddr();
             }
             grievance.setHostname(clientIp);
+            String extId = externalIdService.nextExternalId();
+            grievance.setExternalId(extId);
             grievanceRepository.save(grievance);
+
+
+            String grievanceId = grievance.getExternalId();
 
             GrievanceAssignment ga = new GrievanceAssignment();
             ga.setGrievance(grievance);
@@ -145,8 +141,6 @@ public class GrievanceController {
             ga.setActive(true);
             grievanceAssignmentRepo.save(ga);
 
-            Long grievanceId = grievance.getId();
-            String ticket = grievance.getExternalId();
             String formattedDate = grievance.getSubmittedOn().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
 
@@ -166,23 +160,23 @@ public class GrievanceController {
                      userEmail = generateEmail(dto.getEmail());
                 String userName = dto.getEmail();
 
-                String subject = "[Grievance Submitted: #" + grievanceId + "] - " + dto.getSubject();
+                String subject = "[Issue/Suggestion Submitted: #" + grievanceId + "]- " + dto.getSubject();
                 String text = "<p>Dear " + userName + ",</p>"
-                        + "<p>Your grievance has been successfully submitted. Please find the details below:</p>"
+                        + "<p>Thank you for submitting your Issue/Suggestion. Your request has been successfully recorded in our system. Please find the details below:</p>"
                         + "<ul>"
-                        + "<li><strong>Grievance ID:</strong> " + grievanceId + "</li>"
+                        + "<li><strong>Issue/Suggestion ID:</strong> " + grievanceId + "</li>"
                         + "<li><strong>Subject:</strong> " + dto.getSubject() + "</li>"
                         + "<li><strong>Category:</strong> " + categoryName + "</li>"
                         + "<li><strong>Sub-Category:</strong> " + subCategoryName + "</li>"
                         + "<li><strong>Submitted On:</strong> " + formattedDate + "</li>"
-                        + "<li><strong>Status:</strong> WITH_L1</li>"
+                        + "<li><strong>Current Status:</strong> WITH_L1</li>"
                         + "</ul>"
                         + "<p><strong>Description:</strong><br/>" + grievance.getDetails() + "</p>"
-                        + "<p>You will be notified once the grievance is addressed by the concerned authority.</p>"
+                        + "<p>Our team will review your submission, and you will be notified once it has been addressed by the concerned authority.</p>"
                         + "<p><a href=\"" + appConfig.getPortalUrl() + "\" target=\"_blank\">Click here to access the Portal</a></p>"
-                        + "<p>Regards,<br/>Grievance Redressal System<br/>Reliance Power Limited</p>";
+                        + "<p>Warm Regards,<br/><strong>Employee Support & Resolution Portal</strong><br/>Reliance Power Limited</p>";
 
-                mailHelper.sendMail(userEmail, userName, null, "GrievanceAdmin@reliancegroupindia.com", subject, text);
+                mailHelper.sendMail(userEmail, userName, null, "Resolve360Admin@reliancegroupindia.com", subject, text);
             }
 
 
@@ -193,30 +187,23 @@ public class GrievanceController {
                     userName="Anonymous";
                 else
                     userName=grievance.getUserId();
-                String subject = "[Grievance Assigned: #" + grievanceId + "] - " + dto.getSubject();
+                String subject = "[Issue/Suggestion Assigned: #" + grievanceId + "] - " + dto.getSubject();
                 String text = "<p>Dear " + authority.getName() + ",</p>"
-                        + "<p>A new grievance has been assigned to you. Please find the details below:</p>"
+                        + "<p>A new Issue/Suggestion has been assigned to you for review. Kindly find the details below:</p>"
                         + "<ul>"
-                        + "<li><strong>Grievance ID:</strong> " + grievanceId + "</li>"
+                        + "<li><strong>Issue/Suggestion ID:</strong> " + grievanceId + "</li>"
                         + "<li><strong>Subject:</strong> " + dto.getSubject() + "</li>"
-                        + "<li><strong>Category ID:</strong> " + categoryName + "</li>"
-                        + "<li><strong>Sub-Category ID:</strong> " + subCategoryName + "</li>"
+                        + "<li><strong>Category:</strong> " + categoryName + "</li>"
+                        + "<li><strong>Sub-Category:</strong> " + subCategoryName + "</li>"
                         + "<li><strong>Submitted On:</strong> " + formattedDate + "</li>"
                         + "<li><strong>Submitted By:</strong> " + userName + "</li>"
                         + "</ul>"
                         + "<p><strong>Description:</strong><br/>" + grievance.getDetails() + "</p>"
-                        + "<p>Please log in to the Grievance Redressal Portal to respond.</p>"
+                        + "<p>We request you to log in to the Employee Support & Resolution Portal to review and provide your response / resolve the issues within timelines.</p>"
                         + "<p><a href=\"" + appConfig.getPortalUrl() + "\" target=\"_blank\">Click here to access the Portal</a></p>"
-                        + "<p>Regards,<br/>Grievance Redressal System<br/>Reliance Power Limited</p>";
+                        + "<p>Warm Regards,<br/><strong>Employee Support & Resolution Portal</strong><br/>Reliance Power Limited</p>";
 
-//                String cc = null;
-//                if (!"Y".equalsIgnoreCase(grievance.getAnonymous())) {
-//                    cc = grievance.getUserId();
-//                    if (cc != null && !cc.contains("@")) {
-//                        cc = generateEmail(cc);
-//                    }
-//                }
-                boolean mailFlag = mailHelper.sendMail(authority.getEmail(),authority.getName(), null,"GrievanceAdmin@reliancegroupindia.com",subject,text);
+                boolean mailFlag = mailHelper.sendMail(authority.getEmail(),authority.getName(), null,"Resolve360Admin@reliancegroupindia.com",subject,text);
 
             }
 
@@ -267,37 +254,6 @@ public class GrievanceController {
         }
     }
 
-//    @GetMapping("/assigned")
-//    public ResponseEntity<?> getAssignedGrievances(
-//            @RequestParam(required = false) String name,
-//            @RequestParam(required = false) String employeeId) {
-//
-//        try {
-//            log.info("GrievanceController() : getAssignedGrievances()");
-//            log.info("Employee ID : {} Name : {}", employeeId, name);
-//
-//            List<Grievance> grievances;
-//
-//            if (employeeId != null && !employeeId.isBlank()) {
-//                grievances = grievanceRepository.findByConcernedPersonEmpIdOrderBySubmittedOnDesc(employeeId);
-//            } else if (name != null && !name.isBlank()) {
-//                grievances = grievanceRepository.findByConcernedPersonName(name);
-//            } else {
-//                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Either name or employeeId must be provided.");
-//            }
-//
-//            log.info("Assigned Grievances Found: {}", grievances.size());
-//
-//            List<GrievanceResponseDTO> response = grievances.stream()
-//                    .map(GrievanceResponseDTO::new)
-//                    .collect(Collectors.toList());
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body("Failed to fetch Grievance.");
-//        }
-//    }
-
     @GetMapping("/assigned")
     public ResponseEntity<?> getAssignedGrievances(
             @RequestParam(required = false) String name,
@@ -337,7 +293,7 @@ public class GrievanceController {
                 // If your CAM always has a subcategory, keep as-is; else, you may wish to handle null by skipping or widening.
                 if (subId == null) continue;
 
-                List<Grievance> list = grievanceRepository.findByLocationIdAndCategoryIdAndSubcategoryIdOrderBySubmittedOnDesc(locId, catId, subId);
+                List<Grievance> list = grievanceRepository.findByLocationIdAndCategoryIdAndSubcategoryIdOrderByAuthorityDaysRequiredAsc(locId, catId, subId);
 
                 for (Grievance g : list) {
                     // canRespond only if viewer is the CURRENT assignee
@@ -491,21 +447,23 @@ public class GrievanceController {
 
         ConcernedAuthorityMaster assignee = g.getConcernedAuthority();
         if (assignee != null && assignee.getEmail() != null && !assignee.getEmail().isBlank()) {
-            String subject = "[Grievance Withdrawn] - ID: " + g.getId();
+            String subject = "[Issue/Suggestion Withdrawn] - ID: " + g.getExternalId();
             String body =
                     "<p>Dear " + assignee.getName() + ",</p>" +
-                            "<p>The following grievance has been withdrawn by the user:</p>" +
+                            "<p>Please note that the following Issue/Suggestion has been withdrawn by the user:</p>" +
                             "<ul>" +
-                            "<li><strong>ID:</strong> " + g.getId() + "</li>" +
+                            "<li><strong>ID:</strong> " + g.getExternalId() + "</li>" +
                             "<li><strong>Subject:</strong> " + g.getSubject() + "</li>" +
                             "<li><strong>Status:</strong> WITHDRAWN</li>" +
                             "</ul>" +
-                            "<p>Regards,<br/>Grievance Redressal System</p>";
+                            "<p>You may view further details on the Employee Support & Resolution Portal</p>"
+                            + "<p><a href=\"" + appConfig.getPortalUrl() + "\" target=\"_blank\">Click here to access the Portal</a></p>"
+                            + "<p>Warm Regards,<br/><strong>Employee Support & Resolution Portal</strong><br/>Reliance Power Limited</p>";
             mailHelper.sendMail(assignee.getEmail(), assignee.getName(), null,
-                    "GrievanceAdmin@reliancegroupindia.com", subject, body);
+                    "Resolve360Admin@reliancegroupindia.com", subject, body);
         }
 
-        return ResponseEntity.ok(Map.of("message", "Grievance withdrawn successfully."));
+        return ResponseEntity.ok(Map.of("message", "Issue/Suggestion withdrawn successfully."));
     }
 
     private static final Set<String> ALLOWED_TYPES = Set.of(
@@ -531,6 +489,18 @@ public class GrievanceController {
         return Arrays.stream(input.trim().split("\\s+"))
                 .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
                 .collect(Collectors.joining(" "));
+    }
+
+
+    @PutMapping("/{id}/days-required")
+    public ResponseEntity<Void> setDaysRequired(@PathVariable Long id,
+                                                @RequestBody DaysReqDTO body,
+                                                HttpServletRequest req) {
+        Grievance g = grievanceRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        g.setAuthorityDaysRequired(body.getDaysRequired());
+        grievanceRepository.save(g);
+        return ResponseEntity.noContent().build();
     }
 
 

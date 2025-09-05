@@ -68,21 +68,22 @@ public class EscalationService {
         g.setStatus(targetStatus);
         grievanceRepo.save(g);
 
-        String subject = "[Grievance Escalated] - ID: " + g.getId();
+        String subject = "[Issue/Suggestion Escalated] - ID: " + g.getExternalId();
         String body = """
       <p>Dear  %s,</p>
-      <p>This grievance has been automatically escalated to you based on age from submission.</p>
+      <p>The following Issue/Suggestion has been automatically escalated to you based on the time elapsed since submission:</p>
       <ul>
         <li><strong>ID:</strong> %s</li>
         <li><strong>Subject:</strong> %s</li>
         <li><strong>Current Level:</strong> %s</li>
       </ul>
-      <p><a href="%s" target="_blank">Open in Portal</a></p>
-      <p>Regards,<br/>Grievance Redressal System</p>
-      """.formatted(next.getName(), g.getId(), safe(g.getSubject()), level, appConfig.getPortalUrl());
+      <p>You may log in to the Employee Support & Resolution Portal to review and take necessary action.</p>
+      <p><a href="%s" target="_blank">Click here to access the portal</a></p>
+      <p>Warm Regards,<br/><strong>Employee Support & Resolution Portal</strong></p>
+      """.formatted(next.getName(), g.getExternalId(), safe(g.getSubject()), level, appConfig.getPortalUrl());
 
         mailHelper.sendMail(next.getEmail(), next.getName(), null,
-                "GrievanceAdmin@reliancegroupindia.com", subject, body);
+                "Resolve360Admin@reliancegroupindia.com", subject, body);
     }
 
     private String safe(String s){ return s==null?"":s; }

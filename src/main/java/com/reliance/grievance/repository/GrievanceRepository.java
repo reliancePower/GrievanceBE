@@ -1,5 +1,6 @@
 package com.reliance.grievance.repository;
 
+import com.reliance.grievance.entity.Conversation;
 import com.reliance.grievance.entity.Grievance;
 import com.reliance.grievance.enums.GrievanceStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,6 +25,10 @@ public interface GrievanceRepository extends JpaRepository<Grievance, Long> {
     List<Grievance> findByStatusIn(Collection<GrievanceStatus> statuses);
 
     List<Grievance> findByLocationIdAndCategoryIdAndSubcategoryIdOrderBySubmittedOnDesc(
+            Integer locationId, Integer categoryId, Integer subcategoryId
+    );
+
+    List<Grievance> findByLocationIdAndCategoryIdAndSubcategoryIdOrderByAuthorityDaysRequiredAsc(
             Integer locationId, Integer categoryId, Integer subcategoryId
     );
 

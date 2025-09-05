@@ -1,5 +1,6 @@
 package com.reliance.grievance.util;
 
+import com.reliance.grievance.config.AppConfig;
 import com.reliance.grievance.controller.GrievanceController;
 import com.reliance.grievance.entity.Grievance;
 import com.reliance.grievance.enums.GrievanceStatus;
@@ -25,6 +26,9 @@ public class GrievanceAutoCloseService {
     @Autowired
     private MailHelper mailHelper;
 
+    @Autowired
+    private AppConfig appConfig;
+
     @Scheduled(cron = "0 0 2 * * ?") // Runs daily at 2 AM
     public void autoCloseInactiveGrievances() {
 
@@ -43,22 +47,25 @@ public class GrievanceAutoCloseService {
 
                 // Send mail
                 String userEmail = grievance.getUserId();
+                String authEmail = grievance.getConcernedPersonEmail();
+                String userName = grievance.getUserId();
                 if (userEmail != null && !userEmail.contains("@")) {
                     userEmail = generateEmail(userEmail);
                 }
 
-                String subject = "Grievance Closed Due to Inactivity - ID: " + grievance.getId();
-                String message = "<p>Dear User,</p>"
-                        + "<p>Your grievance (ID: <strong>" + grievance.getId() + "</strong>) has been automatically marked as <strong>Resolved</strong> due to no activity in the last 14 days.</p>"
-                        + "<p>If the issue still persists, you may raise a new grievance.</p>"
-                        + "<p>Regards,<br/>Grievance Redressal System<br/>Reliance Power Limited</p>";
+                String subject = "Inactivity related to Issue/Suggestion  - ID: " + grievance.getExternalId();
+                String message = "<p>Dear "+userName+",</p>"
+                        + "<p>There was no response in the past 14 days from you, related to the Issue/Suggestion ID: "+grievance.getExternalId()+"</p>"
+                        + "<p>If the issue still persists, we kindly request you to raise a new Issue/Suggestion through the portal.</p>"
+                        + "<p><a href=\"" + appConfig.getPortalUrl() + "\" target=\"_blank\">Click here to access the Portal</a></p>"
+                        + "<p>Warm Regards,<br/><strong>Employee Support & Resolution Portal</strong><br/>Reliance Power Limited</p>";
 
                 if (userEmail != null && !userEmail.isEmpty()) {
                     mailHelper.sendMail(
                             userEmail,
                             grievance.getUserId(),
                             null,
-                            "GrievanceAdmin@reliancegroupindia.com",
+                            "Resolve360Admin@reliancegroupindia.com",
                             subject,
                             message
                     );

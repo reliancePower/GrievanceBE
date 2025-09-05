@@ -3,6 +3,7 @@ package com.reliance.grievance.controller;
 import com.reliance.grievance.config.AppConfig;
 import com.reliance.grievance.dto.ConcernedAuthorityDTO;
 import com.reliance.grievance.dto.ConversationDTO;
+import com.reliance.grievance.dto.GrievanceResponseDTO;
 import com.reliance.grievance.entity.*;
 import com.reliance.grievance.enums.GrievanceStatus;
 import com.reliance.grievance.helper.MailHelper;
@@ -109,38 +110,37 @@ public class ConversationController {
         conversationRepo.save(conversation);
 
         // Determine mail recipient
-        String subject = "Response Added - Grievance ID: " + grievance.getId();
+        String subject = "Response Added - Issue/Suggestion ID: " + grievance.getExternalId();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<p>A response has been added by <strong>")
+        sb.append("<p>A new response has been added by <strong>")
                 .append(dto.getSenderType())
-                .append(" : ")
+                .append(" - ")
                 .append(type)
-                .append("</strong> for Grievance ID <strong>")
-                .append(grievance.getId())
+                .append("for the")
+                .append("</strong>Issue/Suggestion ID: <strong>")
+                .append(grievance.getExternalId())
                 .append("</strong>.</p>");
 
         if ("AUTHORITY".equalsIgnoreCase(dto.getSenderType())) {
-            sb.append("<p><strong>Note:</strong> If you do not respond within two weeks, the grievance will be automatically marked as resolved.</p>");
+            sb.append("<p><strong>Note:</strong> If you do not respond within two weeks, the Issue/Suggestion will be automatically marked as resolved.</p>");
         }
 
-        sb.append("<p>Please log in to the Grievance Redressal Portal to view the full conversation.</p>")
+        sb.append("<p>You may log in to the Employee Support & Resolution Portal to view the details.</p>")
         .append("<p><a href=\"").append(appConfig.getPortalUrl()).append("\" target=\"_blank\">Click here to access the Portal</a></p>")
 
-                .append("<p>Regards,<br/>Grievance Redressal System<br/>Reliance Power Limited</p>");
+                .append("<p>Warm Regards,<br/><strong>Employee Support & Resolution Portal</strong><br/>Reliance Power Limited</p>");
 
         String messageBody = sb.toString();
 
         if ("USER".equalsIgnoreCase(dto.getSenderType())) {
-            // Mail to assigned authority
-//            ConcernedAuthorityMaster authority = grievance.getConcernedAuthority();
 
             if (authority != null && authority.getEmail() != null && !authority.getEmail().isEmpty()) {
                 boolean mailFlag = mailHelper.sendMail(
                         authority.getEmail(),
                         authority.getName(),
                         null,
-                        "GrievanceAdmin@reliancegroupindia.com",
+                        "Resolve360Admin@reliancegroupindia.com",
                         subject,
                         messageBody
                 );
@@ -155,7 +155,7 @@ public class ConversationController {
                         userEmail,
                         dto.getSenderId(),
                         null,
-                        "GrievanceAdmin@reliancegroupindia.com",
+                        "Resolve360Admin@reliancegroupindia.com",
                         subject,
                         messageBody
                 );
@@ -189,57 +189,28 @@ public class ConversationController {
         if (userName != null && !userName.isEmpty()) {
             if(!userName.contains("@"))
                 userEmail = generateEmail(userName);
-            String subject = "[Grievance Resolved] - " + grievance.getSubject();
-            String text = "<p>Dear User,</p>"
-                    + "<p>Your grievance has been marked as <strong>Resolved</strong>. Please find the details below:</p>"
+            String subject = "[Issue/Suggestion Resolved] - " + grievance.getSubject();
+            String text = "<p>Dear " + userName + ",</p>"
+                    + "<p>Your Issue/Suggestion has been <strong>Resolved</strong>. Please find the details below:</p>"
                     + "<ul>"
                     + "<li><strong>Subject:</strong> " + grievance.getSubject() + "</li>"
-                    + "<li><strong>Category ID:</strong> " + categoryName + "</li>"
-                    + "<li><strong>Sub-Category ID:</strong> " + subCategoryName + "</li>"
+                    + "<li><strong>Category:</strong> " + categoryName + "</li>"
+                    + "<li><strong>Sub-Category:</strong> " + subCategoryName + "</li>"
                     + "<li><strong>Submitted On:</strong> " + formattedDate+ "</li>"
                     + "<li><strong>Status:</strong> RESOLVED</li>"
                     + "</ul>"
                     + "<p><strong>Description:</strong><br/>" + grievance.getDetails() + "</p>"
-                    + "<p>Thank you for using the Grievance Redressal Portal.</p>"
-                    + "<p>Regards,<br/>Grievance Redressal System<br/>Reliance Power Limited</p>";
+                    + "<p><a href=\"" + appConfig.getPortalUrl() + "\" target=\"_blank\">Click here to access the Portal</a></p>"
+                    + "<p>Thank you for using the Employee Support & Resolution Portal.</p>"
+                    + "<p>Warm Regards,<br/><strong>Employee Support & Resolution Portal</strong><br/>Reliance Power Limited</p>";
 
-            boolean mailFlag = mailHelper.sendMail(
+            boolean mailFlag = mailHelper.sendMailCc(
                     userEmail,
                     userName,
                     null,
-                    "GrievanceAdmin@reliancegroupindia.com",
+                    "Resolve360Admin@reliancegroupindia.com",
                     subject,
-                    text
-            );
-        }
-
-        if (authorityEmail != null && !authorityEmail.isBlank()) {
-            String subject = "[Action Notice] Grievance Resolved - ID " + grievance.getId();
-            String body = new StringBuilder()
-                    .append("<p>Dear ").append(safe(authorityName)).append(",</p>")
-                    .append("<p>The following grievance has been marked as <strong>Resolved</strong>:</p>")
-                    .append("<ul>")
-                    .append("<li><strong>ID:</strong> ").append(grievance.getId()).append("</li>")
-                    .append("<li><strong>Subject:</strong> ").append(safe(grievance.getSubject())).append("</li>")
-                    .append("<li><strong>Category:</strong> ").append(safe(categoryName)).append("</li>")
-                    .append("<li><strong>Sub-Category:</strong> ").append(safe(subCategoryName)).append("</li>")
-                    .append("<li><strong>Submitted On:</strong> ").append(formattedDate).append("</li>")
-                    .append("<li><strong>Resolved On:</strong> ")
-                    .append(grievance.getUpdateDate() != null
-                            ? grievance.getUpdateDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                            : "-")
-                    .append("</li>")
-                    .append("</ul>")
-                    .append("<p>Regards,<br/>Grievance Redressal System<br/>Reliance Power Limited</p>")
-                    .toString();
-
-            mailHelper.sendMail(
-                    authorityEmail,
-                    authorityName,
-                    null,
-                    "GrievanceAdmin@reliancegroupindia.com",
-                    subject,
-                    body
+                    text,authorityEmail
             );
         }
 
@@ -324,7 +295,7 @@ public class ConversationController {
                 String text = "<p>Dear " + nextAuthority.getName() + ",</p>"
                         + "<p>A grievance has been escalated and assigned to you. Please find the details below:</p>"
                         + "<ul>"
-                        + "<li><strong>Grievance ID:</strong> " + grievance.getId() + "</li>"
+                        + "<li><strong>Grievance ID:</strong> " + grievance.getExternalId() + "</li>"
                         + "<li><strong>Subject:</strong> " + grievance.getSubject() + "</li>"
                         + "<li><strong>Category ID:</strong> " + categoryName + "</li>"
                         + "<li><strong>Sub-Category ID:</strong> " + subCategoryName + "</li>"
@@ -402,6 +373,16 @@ public class ConversationController {
         if (s == null) return "";
         return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
     }
+
+
+    @GetMapping("/{id}/getDetails")
+    public ResponseEntity<GrievanceResponseDTO> getDetails(@PathVariable Long id) {
+        Grievance grievance = grievanceRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grievance not found"));
+
+        return ResponseEntity.ok(new GrievanceResponseDTO(grievance));
+    }
+
 
 
 

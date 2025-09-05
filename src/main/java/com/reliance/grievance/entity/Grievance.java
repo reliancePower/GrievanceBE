@@ -106,6 +106,9 @@ public class Grievance {
     @Column(name = "user_dept")
     private String userDept;
 
+    @Column(name = "authority_days_required")
+    private Integer authorityDaysRequired;
+
 
 
     @PreUpdate

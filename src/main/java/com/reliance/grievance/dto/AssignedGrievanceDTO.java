@@ -27,6 +27,7 @@ public class AssignedGrievanceDTO {
     private String currentLocation;
     private String userDept;
     private String externalId;
+    private Integer authorityDaysRequired;
 
 
 
@@ -49,6 +50,7 @@ public class AssignedGrievanceDTO {
         this.currentLocation = grievance.getCurrentLocation() != null ? grievance.getCurrentLocation() :"";
         this.userDept = grievance.getUserDept() != null ? grievance.getUserDept() :"";
         this.externalId = grievance.getExternalId() != null ? grievance.getExternalId() :"";
+        this.authorityDaysRequired = grievance.getAuthorityDaysRequired();
 
     }
 }
